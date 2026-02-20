@@ -1,0 +1,1033 @@
+{
+  "project": {
+    "name": "QuartzMobile",
+    "displayName": "Quartz Azure Monitor",
+    "version": "1.0.0",
+    "platform": "iOS",
+    "minimumVersion": "17.0",
+    "language": "Swift",
+    "swiftVersion": "6.0",
+    "uiFramework": "SwiftUI",
+    "architecture": "MVVM"
+  },
+  "api": {
+    "baseUrl": "https://zkqhktsvhazeljnncncr.supabase.co/functions/v1/public-api/v1",
+    "authHeader": "X-API-Key",
+    "responseFormat": "JSON",
+    "rateLimit": {
+      "requestsPerHour": 1000,
+      "burstPerMinute": 100
+    }
+  },
+  "modules": [
+    {
+      "id": "auth",
+      "name": "Authentication",
+      "priority": "P0",
+      "screens": [
+        {
+          "id": "login",
+          "name": "LoginView",
+          "description": "User authentication screen with email/password and SSO options",
+          "components": [
+            "EmailTextField",
+            "PasswordField",
+            "SignInButton",
+            "MicrosoftSSOButton",
+            "BiometricUnlockButton",
+            "ForgotPasswordLink"
+          ],
+          "viewModel": "LoginViewModel",
+          "endpoints": [
+            {
+              "method": "POST",
+              "path": "/auth/login",
+              "description": "Email/password authentication"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "email_auth",
+          "name": "Email/Password Login",
+          "priority": "P0",
+          "acceptance": [
+            "User can enter email and password",
+            "Validation shows errors for invalid input",
+            "Successful login navigates to Dashboard",
+            "Failed login shows error message"
+          ]
+        },
+        {
+          "id": "sso_auth",
+          "name": "Microsoft SSO",
+          "priority": "P0",
+          "acceptance": [
+            "User can tap Microsoft sign-in button",
+            "OAuth flow opens in system browser",
+            "Successful auth returns to app with session"
+          ]
+        },
+        {
+          "id": "biometric_auth",
+          "name": "Biometric Authentication",
+          "priority": "P1",
+          "acceptance": [
+            "Returning users see biometric prompt",
+            "Face ID/Touch ID unlocks the app",
+            "Fallback to password if biometric fails"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "name": "Dashboard",
+      "priority": "P0",
+      "screens": [
+        {
+          "id": "dashboard_main",
+          "name": "DashboardView",
+          "description": "Main overview dashboard with statistics and charts",
+          "components": [
+            "StatisticsCardsView",
+            "ResourceHealthChart",
+            "PerformanceTrendChart",
+            "RecentChecksListView",
+            "CriticalAlertsBar"
+          ],
+          "viewModel": "DashboardViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/dashboard/summary",
+              "description": "Get dashboard statistics"
+            },
+            {
+              "method": "GET",
+              "path": "/resources?status=down",
+              "description": "Get down resources"
+            },
+            {
+              "method": "GET",
+              "path": "/alerts?status=active&severity=critical",
+              "description": "Get critical active alerts"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "dashboard_stats",
+          "name": "Dashboard Statistics",
+          "priority": "P0",
+          "acceptance": [
+            "Shows total resource count",
+            "Shows up/down/degraded counts",
+            "Shows active alert counts by severity",
+            "Shows average uptime percentage"
+          ]
+        },
+        {
+          "id": "health_chart",
+          "name": "Resource Health Chart",
+          "priority": "P0",
+          "acceptance": [
+            "Displays pie chart of resource status",
+            "Chart animates on load",
+            "Tapping segment filters resources"
+          ]
+        },
+        {
+          "id": "trend_chart",
+          "name": "Performance Trend Chart",
+          "priority": "P1",
+          "acceptance": [
+            "Shows response time over time",
+            "Shows uptime percentage over time",
+            "Period selector (24h, 7d, 30d)"
+          ]
+        },
+        {
+          "id": "realtime_updates",
+          "name": "Real-time Updates",
+          "priority": "P0",
+          "acceptance": [
+            "Dashboard updates automatically on data changes",
+            "WebSocket connection maintained",
+            "Connection status indicator shown"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "resources",
+      "name": "Resource Monitoring",
+      "priority": "P0",
+      "screens": [
+        {
+          "id": "resources_list",
+          "name": "ResourcesListView",
+          "description": "Searchable, filterable list of all monitored resources",
+          "components": [
+            "SearchBar",
+            "FilterChips",
+            "ResourceRowView",
+            "StatusIndicator",
+            "PaginationControl"
+          ],
+          "viewModel": "ResourcesListViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/resources",
+              "queryParams": ["status", "resource_type", "client_id", "environment_id", "limit", "offset"],
+              "description": "List resources with filters"
+            }
+          ]
+        },
+        {
+          "id": "resource_detail",
+          "name": "ResourceDetailView",
+          "description": "Detailed view of a single resource with metrics",
+          "components": [
+            "ResourceStatusHero",
+            "ResourceMetadataSection",
+            "ResponseTimeChart",
+            "UptimeStatsGrid",
+            "CheckResultsList",
+            "AzureResourcePanel",
+            "CostTrendChart",
+            "MonitoringChecksList"
+          ],
+          "viewModel": "ResourceDetailViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/resources/{id}",
+              "description": "Get resource details"
+            },
+            {
+              "method": "GET",
+              "path": "/resources/{id}/status",
+              "description": "Get current status with metrics"
+            },
+            {
+              "method": "GET",
+              "path": "/resources/{id}/uptime",
+              "queryParams": ["period"],
+              "description": "Get uptime statistics"
+            },
+            {
+              "method": "GET",
+              "path": "/monitoring-checks",
+              "queryParams": ["resource_id"],
+              "description": "Get monitoring checks for resource"
+            },
+            {
+              "method": "GET",
+              "path": "/monitoring-checks/{id}/results",
+              "description": "Get check result history"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "resource_search",
+          "name": "Resource Search",
+          "priority": "P0",
+          "acceptance": [
+            "User can search by resource name",
+            "Search results update as user types",
+            "Empty state shown for no results"
+          ]
+        },
+        {
+          "id": "resource_filter",
+          "name": "Resource Filtering",
+          "priority": "P0",
+          "acceptance": [
+            "Filter by status (up/down/degraded/unknown)",
+            "Filter by resource type",
+            "Filter by client",
+            "Filter by environment",
+            "Multiple filters can be combined"
+          ]
+        },
+        {
+          "id": "resource_status",
+          "name": "Resource Status Display",
+          "priority": "P0",
+          "acceptance": [
+            "Status indicator shows up (green), down (red), degraded (yellow), unknown (gray)",
+            "Last check time displayed",
+            "Response time displayed"
+          ]
+        },
+        {
+          "id": "uptime_metrics",
+          "name": "Uptime Metrics",
+          "priority": "P0",
+          "acceptance": [
+            "Shows 24h uptime percentage",
+            "Shows 7d uptime percentage",
+            "Shows 30d uptime percentage",
+            "Shows 90d uptime percentage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alerts",
+      "name": "Alerts",
+      "priority": "P0",
+      "screens": [
+        {
+          "id": "alerts_list",
+          "name": "AlertsListView",
+          "description": "Tabbed interface for managing alerts",
+          "components": [
+            "TabSelector",
+            "AlertRowView",
+            "SeverityBadge",
+            "StatusBadge",
+            "FilterSheet",
+            "SwipeActions"
+          ],
+          "viewModel": "AlertsListViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/alerts",
+              "queryParams": ["severity", "status", "resource_id", "limit", "offset"],
+              "description": "List alerts with filters"
+            },
+            {
+              "method": "POST",
+              "path": "/alerts/{id}/acknowledge",
+              "description": "Acknowledge an alert"
+            },
+            {
+              "method": "POST",
+              "path": "/alerts/{id}/resolve",
+              "description": "Resolve an alert"
+            }
+          ]
+        },
+        {
+          "id": "alert_detail",
+          "name": "AlertDetailView",
+          "description": "Detailed view of a single alert",
+          "components": [
+            "AlertHeader",
+            "SeverityIndicator",
+            "AlertTimeline",
+            "LinkedResourceCard",
+            "ActionButtons"
+          ],
+          "viewModel": "AlertDetailViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/alerts/{id}",
+              "description": "Get alert details"
+            }
+          ]
+        },
+        {
+          "id": "alert_rules_list",
+          "name": "AlertRulesListView",
+          "description": "List of configured alert rules",
+          "components": [
+            "AlertRuleRowView",
+            "EnabledToggle",
+            "ThresholdDisplay"
+          ],
+          "viewModel": "AlertRulesListViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/alert-rules",
+              "description": "List all alert rules"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "alert_list",
+          "name": "Triggered Alerts List",
+          "priority": "P0",
+          "acceptance": [
+            "Shows all triggered alerts",
+            "Sorted by severity then time",
+            "Severity color coding (critical=red, warning=orange, info=blue)",
+            "Status badges (active, acknowledged, resolved)"
+          ]
+        },
+        {
+          "id": "alert_acknowledge",
+          "name": "Acknowledge Alert",
+          "priority": "P0",
+          "acceptance": [
+            "Swipe left to acknowledge",
+            "Button tap to acknowledge",
+            "Status updates immediately",
+            "Confirmation feedback"
+          ]
+        },
+        {
+          "id": "alert_resolve",
+          "name": "Resolve Alert",
+          "priority": "P0",
+          "acceptance": [
+            "Swipe left to resolve",
+            "Button tap to resolve",
+            "Status updates immediately",
+            "Alert moves to resolved section"
+          ]
+        },
+        {
+          "id": "alert_filter",
+          "name": "Alert Filtering",
+          "priority": "P1",
+          "acceptance": [
+            "Filter by severity",
+            "Filter by status",
+            "Filter by resource"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clients",
+      "name": "Client Management",
+      "priority": "P1",
+      "screens": [
+        {
+          "id": "clients_list",
+          "name": "ClientsListView",
+          "description": "List of all clients",
+          "components": [
+            "SearchBar",
+            "StatusFilter",
+            "ClientCardView",
+            "StatusIndicator"
+          ],
+          "viewModel": "ClientsListViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/clients",
+              "queryParams": ["status", "limit", "offset"],
+              "description": "List clients with filters"
+            }
+          ]
+        },
+        {
+          "id": "client_detail",
+          "name": "ClientDetailView",
+          "description": "Client details with environments",
+          "components": [
+            "ClientHeader",
+            "BillingInfoSection",
+            "EnvironmentsList",
+            "CollapsibleSection"
+          ],
+          "viewModel": "ClientDetailViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/clients/{id}",
+              "description": "Get client details"
+            },
+            {
+              "method": "GET",
+              "path": "/clients/{id}/environments",
+              "description": "Get client environments"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "client_list",
+          "name": "Clients List",
+          "priority": "P1",
+          "acceptance": [
+            "Shows all clients",
+            "Searchable by name",
+            "Filterable by status",
+            "Shows client status indicator"
+          ]
+        },
+        {
+          "id": "client_detail",
+          "name": "Client Detail",
+          "priority": "P1",
+          "acceptance": [
+            "Shows client information",
+            "Shows billing info",
+            "Shows environments with expand/collapse",
+            "Shows resources per environment"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "incidents",
+      "name": "Incident Management",
+      "priority": "P1",
+      "screens": [
+        {
+          "id": "incidents_list",
+          "name": "IncidentsListView",
+          "description": "List of all incidents",
+          "components": [
+            "FilterBar",
+            "IncidentRowView",
+            "StatusBadge",
+            "SeverityBadge"
+          ],
+          "viewModel": "IncidentsListViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/incidents",
+              "queryParams": ["status", "severity", "limit", "offset"],
+              "description": "List incidents"
+            }
+          ]
+        },
+        {
+          "id": "incident_detail",
+          "name": "IncidentDetailView",
+          "description": "Incident details with linked alerts",
+          "components": [
+            "IncidentHeader",
+            "StatusTimeline",
+            "LinkedAlertsList",
+            "ResolutionNotesSection"
+          ],
+          "viewModel": "IncidentDetailViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/incidents/{id}",
+              "description": "Get incident details"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "incident_list",
+          "name": "Incidents List",
+          "priority": "P1",
+          "acceptance": [
+            "Shows all incidents",
+            "Status indicators (open, investigating, resolved)",
+            "Severity badges",
+            "Filterable by status and severity"
+          ]
+        },
+        {
+          "id": "incident_detail",
+          "name": "Incident Detail",
+          "priority": "P1",
+          "acceptance": [
+            "Shows incident information",
+            "Shows status timeline",
+            "Shows linked alerts",
+            "Shows resolution notes"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "azure",
+      "name": "Azure Monitoring",
+      "priority": "P1",
+      "screens": [
+        {
+          "id": "azure_overview",
+          "name": "AzureOverviewView",
+          "description": "Multi-tenant Azure dashboard",
+          "components": [
+            "TenantSelector",
+            "CostSummaryCard",
+            "CostTrendChart",
+            "ResourceCountsCard",
+            "HealthIssuesSummary"
+          ],
+          "viewModel": "AzureOverviewViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/azure/tenants",
+              "description": "List Azure tenants"
+            },
+            {
+              "method": "GET",
+              "path": "/azure/costs/summary",
+              "queryParams": ["tenant_id", "from", "to"],
+              "description": "Get cost summary"
+            },
+            {
+              "method": "GET",
+              "path": "/azure/costs/trend",
+              "queryParams": ["tenant_id", "days"],
+              "description": "Get cost trend"
+            }
+          ]
+        },
+        {
+          "id": "azure_cost_report",
+          "name": "AzureCostReportView",
+          "description": "Detailed cost analysis with filtering",
+          "components": [
+            "DateRangePicker",
+            "TenantFilter",
+            "ResourceGroupFilter",
+            "CostComparisonCards",
+            "CostTrendChart",
+            "CostBreakdownTables",
+            "SpikeAnalysisSheet",
+            "ExportButton"
+          ],
+          "viewModel": "AzureCostReportViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/azure/costs/summary",
+              "description": "Cost summary for period"
+            },
+            {
+              "method": "GET",
+              "path": "/azure/costs/by-resource-group",
+              "description": "Cost by resource group"
+            },
+            {
+              "method": "GET",
+              "path": "/azure/costs/trend",
+              "description": "Daily cost trend"
+            }
+          ]
+        },
+        {
+          "id": "azure_health_issues",
+          "name": "AzureHealthIssuesView",
+          "description": "Azure health recommendations and issues",
+          "components": [
+            "RecommendationsList",
+            "IdleResourcesWidget",
+            "RightsizingWidget",
+            "CostAnomalyWidget"
+          ],
+          "viewModel": "AzureHealthIssuesViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/azure/resources",
+              "description": "List Azure resources"
+            }
+          ]
+        },
+        {
+          "id": "azure_resource_detail",
+          "name": "AzureResourceDetailView",
+          "description": "Azure resource metrics and details",
+          "components": [
+            "ResourceMetadata",
+            "MetricsCharts",
+            "CostHistoryChart",
+            "LinkedResourceCard"
+          ],
+          "viewModel": "AzureResourceDetailViewModel",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/azure/resources/{id}",
+              "description": "Get Azure resource details"
+            },
+            {
+              "method": "GET",
+              "path": "/azure/resources/{id}/metrics",
+              "queryParams": ["metric_name", "from", "to", "interval"],
+              "description": "Get resource metrics"
+            }
+          ]
+        }
+      ],
+      "features": [
+        {
+          "id": "azure_overview",
+          "name": "Azure Overview Dashboard",
+          "priority": "P1",
+          "acceptance": [
+            "Shows multi-tenant overview",
+            "Total cost summary",
+            "Cost trend chart",
+            "Resource counts by type"
+          ]
+        },
+        {
+          "id": "cost_report",
+          "name": "Cost Report",
+          "priority": "P1",
+          "acceptance": [
+            "Date range selection",
+            "Tenant and resource group filters",
+            "Period comparison cards",
+            "Cost breakdown tables",
+            "Export to CSV via share sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sql_monitoring",
+      "name": "SQL Monitoring",
+      "priority": "P2",
+      "screens": [
+        {
+          "id": "sql_overview",
+          "name": "SQLOverviewView",
+          "description": "SQL database overview dashboard",
+          "components": [
+            "SQLHealthScoreWidget",
+            "DatabaseList",
+            "KeyMetricsSummary",
+            "ReplicationStatus"
+          ],
+          "viewModel": "SQLOverviewViewModel"
+        },
+        {
+          "id": "sql_query_insights",
+          "name": "SQLQueryInsightsView",
+          "description": "SQL query performance analysis",
+          "components": [
+            "TopQueriesList",
+            "LongRunningQueriesList",
+            "WaitStatistics",
+            "MissingIndexes"
+          ],
+          "viewModel": "SQLQueryInsightsViewModel"
+        }
+      ],
+      "features": [
+        {
+          "id": "sql_health",
+          "name": "SQL Health Score",
+          "priority": "P2",
+          "acceptance": [
+            "Shows overall SQL health score",
+            "Lists all SQL databases",
+            "Shows key metrics (CPU, DTU, storage)"
+          ]
+        },
+        {
+          "id": "query_insights",
+          "name": "Query Insights",
+          "priority": "P2",
+          "acceptance": [
+            "Top queries by CPU time",
+            "Long-running queries",
+            "Wait statistics",
+            "Missing index recommendations"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "name": "Settings",
+      "priority": "P1",
+      "screens": [
+        {
+          "id": "settings_main",
+          "name": "SettingsView",
+          "description": "User settings and preferences",
+          "components": [
+            "UserProfileSection",
+            "NotificationPreferences",
+            "ThemeSelector",
+            "BiometricToggle",
+            "SignOutButton"
+          ],
+          "viewModel": "SettingsViewModel"
+        },
+        {
+          "id": "admin_settings",
+          "name": "AdminSettingsView",
+          "description": "Admin-only system settings",
+          "components": [
+            "UserManagementList",
+            "AzureTenantSettings",
+            "SystemSettings",
+            "APIKeyManagement",
+            "SyncScheduler"
+          ],
+          "viewModel": "AdminSettingsViewModel"
+        }
+      ],
+      "features": [
+        {
+          "id": "theme_selection",
+          "name": "Theme Selection",
+          "priority": "P1",
+          "acceptance": [
+            "Light mode option",
+            "Dark mode option",
+            "System default option"
+          ]
+        },
+        {
+          "id": "notification_prefs",
+          "name": "Notification Preferences",
+          "priority": "P1",
+          "acceptance": [
+            "Toggle critical alerts",
+            "Toggle warning alerts",
+            "Toggle incident updates",
+            "Toggle cost anomalies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "push_notifications",
+      "name": "Push Notifications",
+      "priority": "P0",
+      "features": [
+        {
+          "id": "notification_registration",
+          "name": "Device Registration",
+          "priority": "P0",
+          "acceptance": [
+            "Request notification permission on first launch",
+            "Register device token with backend",
+            "Handle token refresh"
+          ]
+        },
+        {
+          "id": "notification_categories",
+          "name": "Notification Categories",
+          "priority": "P0",
+          "acceptance": [
+            "Critical alerts show immediately",
+            "Warning alerts show in notification center",
+            "Incident updates grouped",
+            "Cost anomalies show with amount"
+          ]
+        },
+        {
+          "id": "deep_linking",
+          "name": "Deep Linking",
+          "priority": "P0",
+          "acceptance": [
+            "Tapping notification opens relevant screen",
+            "Alert notification opens alert detail",
+            "Incident notification opens incident detail",
+            "Resource notification opens resource detail"
+          ]
+        }
+      ]
+    }
+  ],
+  "dataModels": [
+    {
+      "name": "Client",
+      "properties": [
+        {"name": "id", "type": "UUID", "required": true},
+        {"name": "name", "type": "String", "required": true},
+        {"name": "status", "type": "ClientStatus", "required": true},
+        {"name": "contactEmail", "type": "String?", "required": false},
+        {"name": "description", "type": "String?", "required": false},
+        {"name": "monthlyHostingFee", "type": "Decimal?", "required": false},
+        {"name": "createdAt", "type": "Date", "required": true}
+      ]
+    },
+    {
+      "name": "Resource",
+      "properties": [
+        {"name": "id", "type": "UUID", "required": true},
+        {"name": "name", "type": "String", "required": true},
+        {"name": "resourceType", "type": "ResourceType", "required": true},
+        {"name": "status", "type": "ResourceStatus", "required": true},
+        {"name": "lastCheckedAt", "type": "Date?", "required": false},
+        {"name": "clientId", "type": "UUID?", "required": false},
+        {"name": "environmentId", "type": "UUID?", "required": false},
+        {"name": "url", "type": "String?", "required": false},
+        {"name": "description", "type": "String?", "required": false}
+      ]
+    },
+    {
+      "name": "Alert",
+      "properties": [
+        {"name": "id", "type": "UUID", "required": true},
+        {"name": "title", "type": "String", "required": true},
+        {"name": "message", "type": "String", "required": true},
+        {"name": "severity", "type": "AlertSeverity", "required": true},
+        {"name": "status", "type": "AlertStatus", "required": true},
+        {"name": "resourceId", "type": "UUID?", "required": false},
+        {"name": "triggeredAt", "type": "Date", "required": true},
+        {"name": "acknowledgedAt", "type": "Date?", "required": false},
+        {"name": "resolvedAt", "type": "Date?", "required": false}
+      ]
+    },
+    {
+      "name": "Incident",
+      "properties": [
+        {"name": "id", "type": "UUID", "required": true},
+        {"name": "title", "type": "String", "required": true},
+        {"name": "description", "type": "String?", "required": false},
+        {"name": "severity", "type": "AlertSeverity", "required": true},
+        {"name": "status", "type": "IncidentStatus", "required": true},
+        {"name": "createdAt", "type": "Date", "required": true},
+        {"name": "resolvedAt", "type": "Date?", "required": false},
+        {"name": "resolutionNotes", "type": "String?", "required": false}
+      ]
+    },
+    {
+      "name": "DashboardSummary",
+      "properties": [
+        {"name": "resources", "type": "ResourceStats", "required": true},
+        {"name": "alerts", "type": "AlertStats", "required": true},
+        {"name": "uptime", "type": "UptimeStats", "required": true}
+      ]
+    },
+    {
+      "name": "AzureTenant",
+      "properties": [
+        {"name": "id", "type": "UUID", "required": true},
+        {"name": "name", "type": "String", "required": true},
+        {"name": "tenantId", "type": "String", "required": true},
+        {"name": "subscriptionId", "type": "String", "required": true},
+        {"name": "isEnabled", "type": "Bool", "required": true}
+      ]
+    },
+    {
+      "name": "AzureCostSummary",
+      "properties": [
+        {"name": "totalCost", "type": "Decimal", "required": true},
+        {"name": "currency", "type": "String", "required": true},
+        {"name": "period", "type": "DatePeriod", "required": true},
+        {"name": "byTenant", "type": "[TenantCost]", "required": true}
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "name": "ClientStatus",
+      "cases": ["active", "inactive"]
+    },
+    {
+      "name": "ResourceType",
+      "cases": ["website", "server", "database", "api", "storage", "network"]
+    },
+    {
+      "name": "ResourceStatus",
+      "cases": ["up", "down", "degraded", "unknown"]
+    },
+    {
+      "name": "AlertSeverity",
+      "cases": ["critical", "warning", "info"]
+    },
+    {
+      "name": "AlertStatus",
+      "cases": ["active", "acknowledged", "resolved"]
+    },
+    {
+      "name": "IncidentStatus",
+      "cases": ["open", "investigating", "resolved"]
+    }
+  ],
+  "navigation": {
+    "type": "TabView",
+    "tabs": [
+      {
+        "id": "dashboard",
+        "title": "Dashboard",
+        "icon": "chart.bar.fill",
+        "rootScreen": "DashboardView"
+      },
+      {
+        "id": "resources",
+        "title": "Resources",
+        "icon": "server.rack",
+        "rootScreen": "ResourcesListView"
+      },
+      {
+        "id": "alerts",
+        "title": "Alerts",
+        "icon": "bell.fill",
+        "rootScreen": "AlertsListView",
+        "badge": "unreadAlertCount"
+      },
+      {
+        "id": "clients",
+        "title": "Clients",
+        "icon": "building.2.fill",
+        "rootScreen": "ClientsListView"
+      },
+      {
+        "id": "more",
+        "title": "More",
+        "icon": "ellipsis",
+        "rootScreen": "MoreMenuView"
+      }
+    ]
+  },
+  "testing": {
+    "unitTestCoverage": 80,
+    "uiTestFlows": [
+      "Login Flow",
+      "Dashboard Navigation",
+      "Alert Acknowledgment",
+      "Resource Detail Navigation"
+    ]
+  },
+  "dependencies": [
+    {
+      "name": "supabase-swift",
+      "url": "https://github.com/supabase-community/supabase-swift",
+      "version": "2.0.0",
+      "purpose": "Supabase integration for auth and realtime"
+    },
+    {
+      "name": "KeychainAccess",
+      "url": "https://github.com/kishikawakatsumi/KeychainAccess",
+      "version": "4.2.0",
+      "purpose": "Secure credential storage"
+    },
+    {
+      "name": "Charts",
+      "url": "https://github.com/danielgindi/Charts",
+      "version": "5.0.0",
+      "purpose": "Data visualization charts"
+    }
+  ],
+  "buildPhases": [
+    {
+      "phase": 1,
+      "name": "MVP",
+      "modules": ["auth", "dashboard", "resources", "alerts", "push_notifications"],
+      "priority": "P0"
+    },
+    {
+      "phase": 2,
+      "name": "Core Features",
+      "modules": ["clients", "incidents", "azure", "settings"],
+      "priority": "P1"
+    },
+    {
+      "phase": 3,
+      "name": "Advanced Features",
+      "modules": ["sql_monitoring"],
+      "priority": "P2"
+    }
+  ]
+}

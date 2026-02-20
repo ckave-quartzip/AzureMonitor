@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "1F1CF231-BE06-4FF8-A4C6-5DABFB2E5A6C",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:azuremonitor.xcodeproj",
+        "identifier" : "3B5C4E632F1E8C6C008F27AF",
+        "name" : "azuremonitorTests"
+      }
+    }
+  ],
+  "version" : 1
+}

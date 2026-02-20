@@ -1,0 +1,2260 @@
+openapi: 3.0.3
+info:
+  title: Quartz Monitoring Public API
+  description: |
+    A comprehensive REST API for integrating with the Quartz Monitoring platform.
+    
+    ## Authentication
+    All endpoints (except `/v1/health`) require API key authentication via the `X-API-Key` header.
+    
+    API keys can be generated in the Admin panel under the "API Keys" tab.
+    
+    ## Rate Limiting
+    There are no rate limits on API requests. However, usage is tracked per API key.
+    
+    ## Pagination
+    List endpoints support pagination via query parameters:
+    - `page` - Page number (default: 1)
+    - `per_page` - Items per page (default: 50, max: 100)
+    
+    Paginated responses include a `meta` object with pagination details.
+    
+    ## Sorting
+    Most list endpoints support sorting via query parameters:
+    - `sort_by` - Field to sort by
+    - `sort_order` - `asc` or `desc` (default: desc)
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://zkqhktsvhazeljnncncr.supabase.co/functions/v1/public-api
+    description: Production API Server
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Health
+    description: API health and status
+  - name: Dashboard
+    description: Dashboard overview and statistics
+  - name: Clients
+    description: Client management
+  - name: Environments
+    description: Environment management
+  - name: Resources
+    description: Resource management
+  - name: Azure Resources
+    description: Azure resource data and metrics
+  - name: Azure Costs
+    description: Azure cost data and anomalies
+  - name: Azure SQL
+    description: Azure SQL insights and performance
+  - name: Alerts
+    description: Alert management
+  - name: Alert Rules
+    description: Alert rule configuration
+  - name: Incidents
+    description: Incident management
+  - name: Monitoring Checks
+    description: Monitoring check configuration
+  - name: Maintenance Windows
+    description: Maintenance window management
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "NOT_FOUND"
+            message:
+              type: string
+              example: "Resource not found"
+            details:
+              type: object
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 234
+        total_pages:
+          type: integer
+          example: 5
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Acme Corp"
+        description:
+          type: string
+          nullable: true
+        contact_email:
+          type: string
+          format: email
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive]
+        yearly_hosting_fee:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ClientCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Acme Corp"
+        description:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [active, inactive]
+          default: active
+        yearly_hosting_fee:
+          type: number
+
+    Environment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Production"
+        description:
+          type: string
+          nullable: true
+        azure_tenant_id:
+          type: string
+          format: uuid
+          nullable: true
+        azure_resource_group:
+          type: string
+          nullable: true
+        azure_tag_filter:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EnvironmentCreate:
+      type: object
+      required:
+        - client_id
+        - name
+      properties:
+        client_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Production"
+        description:
+          type: string
+        azure_tenant_id:
+          type: string
+          format: uuid
+        azure_resource_group:
+          type: string
+        azure_tag_filter:
+          type: object
+
+    Resource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Web Server"
+        description:
+          type: string
+          nullable: true
+        resource_type:
+          type: string
+          example: "web_server"
+        status:
+          type: string
+          enum: [up, down, degraded, unknown]
+        client_id:
+          type: string
+          format: uuid
+          nullable: true
+        environment_id:
+          type: string
+          format: uuid
+          nullable: true
+        azure_resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_standalone:
+          type: boolean
+        last_checked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ResourceCreate:
+      type: object
+      required:
+        - name
+        - resource_type
+      properties:
+        name:
+          type: string
+          example: "Web Server"
+        description:
+          type: string
+        resource_type:
+          type: string
+          example: "web_server"
+        client_id:
+          type: string
+          format: uuid
+        environment_id:
+          type: string
+          format: uuid
+        is_standalone:
+          type: boolean
+          default: false
+
+    AzureResource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          example: "/subscriptions/.../resourceGroups/.../providers/..."
+        azure_tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        resource_type:
+          type: string
+          example: "Microsoft.Web/sites"
+        resource_group:
+          type: string
+        location:
+          type: string
+          example: "westeurope"
+        tags:
+          type: object
+          nullable: true
+        sku:
+          type: object
+          nullable: true
+        properties:
+          type: object
+          nullable: true
+        optimization_score:
+          type: number
+          nullable: true
+        synced_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AzureMetric:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+        metric_namespace:
+          type: string
+        metric_name:
+          type: string
+        timestamp_utc:
+          type: string
+          format: date-time
+        average:
+          type: number
+          nullable: true
+        minimum:
+          type: number
+          nullable: true
+        maximum:
+          type: number
+          nullable: true
+        total:
+          type: number
+          nullable: true
+        count:
+          type: integer
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+
+    AzureCostData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_tenant_id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        usage_date:
+          type: string
+          format: date
+        cost_amount:
+          type: number
+        currency:
+          type: string
+          example: "EUR"
+        resource_group:
+          type: string
+          nullable: true
+        meter_category:
+          type: string
+          nullable: true
+        meter_subcategory:
+          type: string
+          nullable: true
+        meter_name:
+          type: string
+          nullable: true
+
+    CostSummary:
+      type: object
+      properties:
+        current_period_start:
+          type: string
+          format: date
+        current_period_end:
+          type: string
+          format: date
+        current_period_total:
+          type: number
+        previous_period_total:
+          type: number
+
+    CostAnomaly:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_tenant_id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        anomaly_date:
+          type: string
+          format: date
+        anomaly_type:
+          type: string
+        severity:
+          type: string
+        expected_cost:
+          type: number
+        actual_cost:
+          type: number
+        deviation_percent:
+          type: number
+        is_acknowledged:
+          type: boolean
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        alert_rule_id:
+          type: string
+          format: uuid
+          nullable: true
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        message:
+          type: string
+        triggered_at:
+          type: string
+          format: date-time
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledged_by:
+          type: string
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        notification_suppressed:
+          type: boolean
+          nullable: true
+        suppression_reason:
+          type: string
+          nullable: true
+
+    AlertRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        rule_type:
+          type: string
+          enum: [downtime, ssl_expiry, response_time, consecutive_failures, azure_cost_threshold, azure_cost_anomaly, azure_cpu_usage, azure_memory_usage, azure_dtu_usage, azure_storage_usage]
+        resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        threshold_value:
+          type: number
+        comparison_operator:
+          type: string
+          enum: [">", "<", ">=", "<=", "=="]
+        is_enabled:
+          type: boolean
+        timeframe_minutes:
+          type: integer
+          nullable: true
+        aggregation_type:
+          type: string
+          nullable: true
+        quiet_hours_enabled:
+          type: boolean
+          nullable: true
+        quiet_hours_start:
+          type: string
+          nullable: true
+        quiet_hours_end:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AlertRuleCreate:
+      type: object
+      required:
+        - rule_type
+        - threshold_value
+      properties:
+        name:
+          type: string
+        rule_type:
+          type: string
+        resource_id:
+          type: string
+          format: uuid
+        threshold_value:
+          type: number
+        comparison_operator:
+          type: string
+          default: ">"
+        is_enabled:
+          type: boolean
+          default: true
+        timeframe_minutes:
+          type: integer
+
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        status:
+          type: string
+          enum: [open, investigating, resolved]
+        started_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_by:
+          type: string
+          nullable: true
+        root_cause:
+          type: string
+          nullable: true
+        resolution_notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    IncidentCreate:
+      type: object
+      required:
+        - title
+        - severity
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        status:
+          type: string
+          enum: [open, investigating, resolved]
+          default: open
+
+    MonitoringCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        check_type:
+          type: string
+          enum: [http, ping, port, ssl, keyword, heartbeat, azure_metric, azure_health]
+        is_enabled:
+          type: boolean
+        url:
+          type: string
+          nullable: true
+        check_interval_seconds:
+          type: integer
+        timeout_seconds:
+          type: integer
+        expected_status_code:
+          type: integer
+          nullable: true
+        http_method:
+          type: string
+          nullable: true
+        keyword_type:
+          type: string
+          nullable: true
+        keyword_value:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MonitoringCheckCreate:
+      type: object
+      required:
+        - resource_id
+        - check_type
+      properties:
+        resource_id:
+          type: string
+          format: uuid
+        check_type:
+          type: string
+        is_enabled:
+          type: boolean
+          default: true
+        url:
+          type: string
+        check_interval_seconds:
+          type: integer
+          default: 60
+        timeout_seconds:
+          type: integer
+          default: 30
+        expected_status_code:
+          type: integer
+        http_method:
+          type: string
+          default: GET
+
+    MaintenanceWindow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        is_recurring:
+          type: boolean
+          nullable: true
+        recurrence_pattern:
+          type: string
+          nullable: true
+        created_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MaintenanceWindowCreate:
+      type: object
+      required:
+        - resource_id
+        - title
+        - starts_at
+        - ends_at
+      properties:
+        resource_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        is_recurring:
+          type: boolean
+        recurrence_pattern:
+          type: string
+
+    SqlInsight:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+        query_hash:
+          type: string
+        query_text:
+          type: string
+          nullable: true
+        execution_count:
+          type: integer
+        total_cpu_time_ms:
+          type: number
+        avg_cpu_time_ms:
+          type: number
+        total_duration_ms:
+          type: number
+        avg_duration_ms:
+          type: number
+        total_logical_reads:
+          type: integer
+        avg_logical_reads:
+          type: number
+
+    SqlPerformanceStat:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+        timestamp_utc:
+          type: string
+          format: date-time
+        cpu_percent:
+          type: number
+          nullable: true
+        dtu_percent:
+          type: number
+          nullable: true
+        storage_percent:
+          type: number
+          nullable: true
+        connection_count:
+          type: integer
+          nullable: true
+        blocked_count:
+          type: integer
+          nullable: true
+        deadlock_count:
+          type: integer
+          nullable: true
+
+    SqlRecommendation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+        recommendation_id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        impact:
+          type: string
+          nullable: true
+        problem:
+          type: string
+          nullable: true
+        solution:
+          type: string
+          nullable: true
+        is_resolved:
+          type: boolean
+
+    SqlWaitStat:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        azure_resource_id:
+          type: string
+          format: uuid
+        wait_type:
+          type: string
+        wait_time_ms:
+          type: number
+          nullable: true
+        wait_count:
+          type: integer
+          nullable: true
+        avg_wait_time_ms:
+          type: number
+          nullable: true
+        max_wait_time_ms:
+          type: number
+          nullable: true
+
+    DashboardOverview:
+      type: object
+      properties:
+        clients_count:
+          type: integer
+        resources_count:
+          type: integer
+        active_alerts_count:
+          type: integer
+        open_incidents_count:
+          type: integer
+        resource_status:
+          type: object
+          additionalProperties:
+            type: integer
+
+    HealthOverview:
+      type: object
+      properties:
+        overall_health:
+          type: integer
+          description: Health percentage (0-100)
+        total_resources:
+          type: integer
+        healthy_resources:
+          type: integer
+
+    AzureTenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tenant_id:
+          type: string
+        subscription_id:
+          type: string
+        is_enabled:
+          type: boolean
+        last_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+paths:
+  /v1/health:
+    get:
+      summary: Health Check
+      description: Check if the API is healthy (no authentication required)
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: "healthy"
+                      timestamp:
+                        type: string
+                        format: date-time
+
+  /v1/dashboard/overview:
+    get:
+      summary: Get Dashboard Overview
+      description: Get summary statistics for the dashboard
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Dashboard overview data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/DashboardOverview'
+              example:
+                success: true
+                data:
+                  clients_count: 15
+                  resources_count: 87
+                  active_alerts_count: 3
+                  open_incidents_count: 1
+                  resource_status:
+                    up: 82
+                    down: 2
+                    degraded: 3
+
+  /v1/dashboard/health:
+    get:
+      summary: Get System Health
+      description: Get overall system health statistics
+      tags:
+        - Dashboard
+      responses:
+        '200':
+          description: Health overview data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/HealthOverview'
+              example:
+                success: true
+                data:
+                  overall_health: 94
+                  total_resources: 87
+                  healthy_resources: 82
+
+  /v1/clients:
+    get:
+      summary: List Clients
+      description: Get a paginated list of all clients
+      tags:
+        - Clients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Client'
+              example:
+                success: true
+                data:
+                  - id: "123e4567-e89b-12d3-a456-426614174000"
+                    name: "Acme Corp"
+                    status: "active"
+                    contact_email: "admin@acme.com"
+                    created_at: "2024-01-15T10:30:00Z"
+                    updated_at: "2024-01-15T10:30:00Z"
+                meta:
+                  page: 1
+                  per_page: 50
+                  total: 15
+                  total_pages: 1
+    post:
+      summary: Create Client
+      description: Create a new client
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientCreate'
+            example:
+              name: "New Client Inc"
+              contact_email: "contact@newclient.com"
+              status: "active"
+      responses:
+        '200':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Client'
+
+  /v1/clients/{id}:
+    get:
+      summary: Get Client
+      description: Get a client by ID with its environments
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Client details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/Client'
+                          - properties:
+                              environments:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Environment'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update Client
+      description: Update an existing client
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientCreate'
+      responses:
+        '200':
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Client'
+    delete:
+      summary: Delete Client
+      description: Delete a client
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Client deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+                        example: true
+
+  /v1/environments:
+    get:
+      summary: List Environments
+      description: Get a paginated list of environments
+      tags:
+        - Environments
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: client_id
+          in: query
+          description: Filter by client ID
+          schema:
+            type: string
+            format: uuid
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: List of environments
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Environment'
+    post:
+      summary: Create Environment
+      tags:
+        - Environments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentCreate'
+      responses:
+        '200':
+          description: Environment created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Environment'
+
+  /v1/environments/{id}:
+    get:
+      summary: Get Environment
+      description: Get environment by ID with resources
+      tags:
+        - Environments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Environment details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/Environment'
+                          - properties:
+                              resources:
+                                type: array
+                                items:
+                                  $ref: '#/components/schemas/Resource'
+    put:
+      summary: Update Environment
+      tags:
+        - Environments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentCreate'
+      responses:
+        '200':
+          description: Environment updated
+    delete:
+      summary: Delete Environment
+      tags:
+        - Environments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Environment deleted
+
+  /v1/resources:
+    get:
+      summary: List Resources
+      description: Get a paginated list of resources with filters
+      tags:
+        - Resources
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+        - name: client_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: environment_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [up, down, degraded, unknown]
+        - name: resource_type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of resources
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Resource'
+    post:
+      summary: Create Resource
+      tags:
+        - Resources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreate'
+      responses:
+        '200':
+          description: Resource created
+
+  /v1/resources/{id}:
+    get:
+      summary: Get Resource
+      description: Get resource by ID with monitoring checks and alerts
+      tags:
+        - Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Resource details
+    put:
+      summary: Update Resource
+      tags:
+        - Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceCreate'
+      responses:
+        '200':
+          description: Resource updated
+    delete:
+      summary: Delete Resource
+      tags:
+        - Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Resource deleted
+
+  /v1/azure/resources:
+    get:
+      summary: List Azure Resources
+      description: Get a paginated list of Azure resources
+      tags:
+        - Azure Resources
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: resource_type
+          in: query
+          schema:
+            type: string
+        - name: resource_group
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of Azure resources
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AzureResource'
+
+  /v1/azure/resources/{id}:
+    get:
+      summary: Get Azure Resource
+      tags:
+        - Azure Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Azure resource details
+
+  /v1/azure/resources/{id}/metrics:
+    get:
+      summary: Get Azure Resource Metrics
+      description: Get metrics for an Azure resource
+      tags:
+        - Azure Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start date (default: 24 hours ago)
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End date (default: now)
+      responses:
+        '200':
+          description: Resource metrics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AzureMetric'
+
+  /v1/azure/resources/{id}/costs:
+    get:
+      summary: Get Azure Resource Cost History
+      tags:
+        - Azure Resources
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Resource cost history
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AzureCostData'
+
+  /v1/azure/costs:
+    get:
+      summary: List Azure Cost Data
+      tags:
+        - Azure Costs
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: resource_group
+          in: query
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Cost data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AzureCostData'
+
+  /v1/azure/costs/summary:
+    get:
+      summary: Get Cost Summary
+      description: Get rolling cost statistics
+      tags:
+        - Azure Costs
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+          description: Number of days to look back
+      responses:
+        '200':
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/CostSummary'
+              example:
+                success: true
+                data:
+                  current_period_start: "2024-01-01"
+                  current_period_end: "2024-01-31"
+                  current_period_total: 12500.50
+                  previous_period_total: 11200.00
+
+  /v1/azure/costs/anomalies:
+    get:
+      summary: List Cost Anomalies
+      tags:
+        - Azure Costs
+      parameters:
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: acknowledged
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        '200':
+          description: Cost anomalies
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CostAnomaly'
+
+  /v1/alerts:
+    get:
+      summary: List Alerts
+      tags:
+        - Alerts
+      parameters:
+        - name: resource_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, warning, info]
+        - name: resolved
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+        - name: acknowledged
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Alert'
+
+  /v1/alerts/{id}:
+    get:
+      summary: Get Alert
+      tags:
+        - Alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert details
+
+  /v1/alerts/{id}/acknowledge:
+    put:
+      summary: Acknowledge Alert
+      tags:
+        - Alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert acknowledged
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Alert'
+
+  /v1/alerts/{id}/resolve:
+    put:
+      summary: Resolve Alert
+      tags:
+        - Alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert resolved
+
+  /v1/alert-rules:
+    get:
+      summary: List Alert Rules
+      tags:
+        - Alert Rules
+      parameters:
+        - name: resource_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: rule_type
+          in: query
+          schema:
+            type: string
+        - name: is_enabled
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        '200':
+          description: List of alert rules
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AlertRule'
+    post:
+      summary: Create Alert Rule
+      tags:
+        - Alert Rules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleCreate'
+      responses:
+        '200':
+          description: Alert rule created
+
+  /v1/alert-rules/{id}:
+    get:
+      summary: Get Alert Rule
+      tags:
+        - Alert Rules
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert rule details
+    put:
+      summary: Update Alert Rule
+      tags:
+        - Alert Rules
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleCreate'
+      responses:
+        '200':
+          description: Alert rule updated
+    delete:
+      summary: Delete Alert Rule
+      tags:
+        - Alert Rules
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert rule deleted
+
+  /v1/incidents:
+    get:
+      summary: List Incidents
+      tags:
+        - Incidents
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, investigating, resolved]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, warning, info]
+      responses:
+        '200':
+          description: List of incidents
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Incident'
+    post:
+      summary: Create Incident
+      tags:
+        - Incidents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreate'
+            example:
+              title: "Database connectivity issues"
+              description: "Multiple services reporting connection timeouts"
+              severity: "critical"
+      responses:
+        '200':
+          description: Incident created
+
+  /v1/incidents/{id}:
+    get:
+      summary: Get Incident
+      description: Get incident with associated alerts
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Incident details
+    put:
+      summary: Update Incident
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreate'
+      responses:
+        '200':
+          description: Incident updated
+    delete:
+      summary: Delete Incident
+      tags:
+        - Incidents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Incident deleted
+
+  /v1/monitoring-checks:
+    get:
+      summary: List Monitoring Checks
+      tags:
+        - Monitoring Checks
+      parameters:
+        - name: resource_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: check_type
+          in: query
+          schema:
+            type: string
+            enum: [http, ping, port, ssl, keyword, heartbeat, azure_metric, azure_health]
+        - name: is_enabled
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        '200':
+          description: List of monitoring checks
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MonitoringCheck'
+    post:
+      summary: Create Monitoring Check
+      tags:
+        - Monitoring Checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitoringCheckCreate'
+      responses:
+        '200':
+          description: Monitoring check created
+
+  /v1/monitoring-checks/{id}:
+    get:
+      summary: Get Monitoring Check
+      description: Get monitoring check with recent results
+      tags:
+        - Monitoring Checks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Monitoring check details
+    put:
+      summary: Update Monitoring Check
+      tags:
+        - Monitoring Checks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitoringCheckCreate'
+      responses:
+        '200':
+          description: Monitoring check updated
+    delete:
+      summary: Delete Monitoring Check
+      tags:
+        - Monitoring Checks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Monitoring check deleted
+
+  /v1/maintenance-windows:
+    get:
+      summary: List Maintenance Windows
+      tags:
+        - Maintenance Windows
+      parameters:
+        - name: resource_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: active
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Filter to only currently active windows
+      responses:
+        '200':
+          description: List of maintenance windows
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MaintenanceWindow'
+    post:
+      summary: Create Maintenance Window
+      tags:
+        - Maintenance Windows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceWindowCreate'
+      responses:
+        '200':
+          description: Maintenance window created
+
+  /v1/maintenance-windows/{id}:
+    get:
+      summary: Get Maintenance Window
+      tags:
+        - Maintenance Windows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Maintenance window details
+    put:
+      summary: Update Maintenance Window
+      tags:
+        - Maintenance Windows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceWindowCreate'
+      responses:
+        '200':
+          description: Maintenance window updated
+    delete:
+      summary: Delete Maintenance Window
+      tags:
+        - Maintenance Windows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Maintenance window deleted
+
+  /v1/azure/sql/{resourceId}/insights:
+    get:
+      summary: Get SQL Query Insights
+      description: Get top queries by CPU time for an Azure SQL database
+      tags:
+        - Azure SQL
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SQL query insights
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SqlInsight'
+
+  /v1/azure/sql/{resourceId}/performance:
+    get:
+      summary: Get SQL Performance Stats
+      tags:
+        - Azure SQL
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start date (default: 24 hours ago)
+      responses:
+        '200':
+          description: SQL performance statistics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SqlPerformanceStat'
+
+  /v1/azure/sql/{resourceId}/recommendations:
+    get:
+      summary: Get SQL Recommendations
+      tags:
+        - Azure SQL
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SQL recommendations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SqlRecommendation'
+
+  /v1/azure/sql/{resourceId}/wait-stats:
+    get:
+      summary: Get SQL Wait Statistics
+      tags:
+        - Azure SQL
+      parameters:
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SQL wait statistics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SqlWaitStat'
+
+  /v1/azure/tenants:
+    get:
+      summary: List Azure Tenants
+      description: Get all configured Azure tenants
+      tags:
+        - Azure Resources
+      responses:
+        '200':
+          description: List of Azure tenants
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AzureTenant'

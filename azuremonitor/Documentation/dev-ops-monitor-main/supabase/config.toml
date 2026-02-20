@@ -1,0 +1,49 @@
+project_id = "zkqhktsvhazeljnncncr"
+
+[functions.execute-checks]
+verify_jwt = false
+
+[functions.send-notifications]
+verify_jwt = false
+
+[functions.manage-users]
+verify_jwt = false
+
+[functions.receive-heartbeat]
+verify_jwt = false
+
+[functions.azure-auth]
+verify_jwt = false
+
+[functions.azure-resources]
+verify_jwt = false
+
+[functions.azure-costs]
+verify_jwt = false
+
+[functions.azure-metrics]
+verify_jwt = false
+
+[functions.azure-sql-insights]
+verify_jwt = false
+
+[functions.azure-sync-resources]
+verify_jwt = false
+
+[functions.azure-sync-costs]
+verify_jwt = false
+
+[functions.azure-sync-metrics]
+verify_jwt = false
+
+[functions.azure-sync-sql-insights]
+verify_jwt = false
+
+[functions.azure-cost-alerts]
+verify_jwt = false
+
+[functions.azure-resource-analysis]
+verify_jwt = false
+
+[functions.public-api]
+verify_jwt = false

@@ -1,0 +1,19 @@
+{
+  "_comment": "Copy this file to config.json and fill in actual values. DO NOT commit config.json",
+  "supabase": {
+    "url": "https://zkqhktsvhazeljnncncr.supabase.co",
+    "anonKey": "YOUR_SUPABASE_ANON_KEY"
+  },
+  "api": {
+    "baseUrl": "https://zkqhktsvhazeljnncncr.supabase.co/functions/v1/public-api/v1",
+    "key": "YOUR_API_KEY_HERE"
+  },
+  "oauth": {
+    "callbackScheme": "quartzmonitor",
+    "callbackHost": "auth-callback"
+  },
+  "bundle": {
+    "identifier": "com.quartz.monitor",
+    "displayName": "Quartz Monitor"
+  }
+}
